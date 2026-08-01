@@ -72,6 +72,17 @@ export default class PrototypeAudio {
     source.connect(filter).connect(gain).connect(context.destination);
     source.start();
 
+    const snap = context.createOscillator();
+    const snapGain = context.createGain();
+    snap.type = 'square';
+    snap.frequency.setValueAtTime(1850, context.currentTime);
+    snap.frequency.exponentialRampToValueAtTime(310, context.currentTime + 0.075);
+    snapGain.gain.setValueAtTime(0.038 * VOLUME_BOOST, context.currentTime);
+    snapGain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.09);
+    snap.connect(snapGain).connect(context.destination);
+    snap.start();
+    snap.stop(context.currentTime + 0.1);
+
     const groan = context.createOscillator();
     const groanGain = context.createGain();
     groan.type = 'sawtooth';
@@ -105,6 +116,139 @@ export default class PrototypeAudio {
     metalRing.addEventListener('ended', () => {
       metalRing.disconnect();
       metalRingGain.disconnect();
+    }, { once: true });
+    snap.addEventListener('ended', () => {
+      snap.disconnect();
+      snapGain.disconnect();
+    }, { once: true });
+  }
+
+  playDoorKnock(accent = 1): void {
+    const context = this.getRunningContext();
+    if (!context) return;
+
+    const now = context.currentTime;
+    const duration = 1.05;
+    const weight = Math.min(1.18, Math.max(0.82, accent));
+    const sampleCount = Math.floor(context.sampleRate * duration);
+    const buffer = context.createBuffer(1, sampleCount, context.sampleRate);
+    const channel = buffer.getChannelData(0);
+
+    for (let index = 0; index < sampleCount; index += 1) {
+      const time = index / context.sampleRate;
+      const impact = Math.exp(-time * 9.5);
+      const grain = Math.sin(index * 0.41) * 0.24 + Math.random() * 2 - 1;
+      channel[index] = grain * impact;
+    }
+
+    const impact = context.createBufferSource();
+    const impactFilter = context.createBiquadFilter();
+    const impactGain = context.createGain();
+    impact.buffer = buffer;
+    impactFilter.type = 'lowpass';
+    impactFilter.frequency.setValueAtTime(310, now);
+    impactFilter.frequency.exponentialRampToValueAtTime(105, now + duration);
+    impactFilter.Q.value = 1.7;
+    impactGain.gain.setValueAtTime(0.075 * VOLUME_BOOST * weight, now);
+    impactGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    impact.connect(impactFilter).connect(impactGain).connect(context.destination);
+    impact.start(now);
+
+    const body = context.createOscillator();
+    const bodyGain = context.createGain();
+    body.type = 'sine';
+    body.frequency.setValueAtTime(67 * weight, now);
+    body.frequency.exponentialRampToValueAtTime(38, now + 0.72);
+    bodyGain.gain.setValueAtTime(0.048 * VOLUME_BOOST * weight, now);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    body.connect(bodyGain).connect(context.destination);
+    body.start(now);
+    body.stop(now + duration);
+
+    const celloFilter = context.createBiquadFilter();
+    const celloGain = context.createGain();
+    celloFilter.type = 'lowpass';
+    celloFilter.frequency.value = 230;
+    celloFilter.Q.value = 2.4;
+    celloGain.gain.setValueAtTime(0.0001, now);
+    celloGain.gain.exponentialRampToValueAtTime(0.013 * VOLUME_BOOST * weight, now + 0.045);
+    celloGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    celloFilter.connect(celloGain).connect(context.destination);
+
+    // B-flat 1 and B1 form a low minor second: close enough to feel like the
+    // wood and cello are beating against each other instead of playing a chord.
+    const celloVoices = [58.27, 61.74].map((frequency, index) => {
+      const voice = context.createOscillator();
+      voice.type = index === 0 ? 'sawtooth' : 'triangle';
+      voice.frequency.value = frequency;
+      voice.detune.value = index === 0 ? -5 : 4;
+      voice.connect(celloFilter);
+      voice.start(now);
+      voice.stop(now + duration);
+      return voice;
+    });
+
+    impact.addEventListener('ended', () => {
+      impact.disconnect();
+      impactFilter.disconnect();
+      impactGain.disconnect();
+    }, { once: true });
+    body.addEventListener('ended', () => {
+      body.disconnect();
+      bodyGain.disconnect();
+    }, { once: true });
+    celloVoices[1].addEventListener('ended', () => {
+      celloVoices.forEach((voice) => voice.disconnect());
+      celloFilter.disconnect();
+      celloGain.disconnect();
+    }, { once: true });
+  }
+
+  playWrongRhythm(): void {
+    const context = this.getRunningContext();
+    if (!context) return;
+
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(96, now);
+    oscillator.frequency.exponentialRampToValueAtTime(31, now + 0.55);
+    gain.gain.setValueAtTime(0.017 * VOLUME_BOOST, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.58);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + 0.6);
+    oscillator.addEventListener('ended', () => {
+      oscillator.disconnect();
+      gain.disconnect();
+    }, { once: true });
+  }
+
+  playDoorOpening(): void {
+    const context = this.getRunningContext();
+    if (!context) return;
+
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(47, now);
+    oscillator.frequency.linearRampToValueAtTime(29, now + 2.8);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(420, now);
+    filter.frequency.exponentialRampToValueAtTime(90, now + 2.8);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.025 * VOLUME_BOOST, now + 0.18);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
+    oscillator.connect(filter).connect(gain).connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + 2.85);
+    oscillator.addEventListener('ended', () => {
+      oscillator.disconnect();
+      filter.disconnect();
+      gain.disconnect();
     }, { once: true });
   }
 
