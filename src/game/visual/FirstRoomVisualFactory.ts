@@ -9,6 +9,9 @@ export interface FirstRoomVisuals {
   roomContainer: Phaser.GameObjects.Container;
   wall: Phaser.GameObjects.Image;
   message: Phaser.GameObjects.Container;
+  doorContainer: Phaser.GameObjects.Container;
+  doorway: Phaser.GameObjects.Rectangle;
+  doorPanel: Phaser.GameObjects.Container;
   darkness: Phaser.GameObjects.Image;
   initialCover: Phaser.GameObjects.Rectangle;
   grain: Phaser.GameObjects.TileSprite;
@@ -27,7 +30,8 @@ export default class FirstRoomVisualFactory {
 
     const wall = this.scene.add.image(0, 0, WALL_TEXTURE).setOrigin(0);
     const message = this.createWallMessage();
-    const roomContainer = this.scene.add.container(0, 0, [wall, message]);
+    const { container: doorContainer, doorway, panel: doorPanel } = this.createDoor();
+    const roomContainer = this.scene.add.container(0, 0, [wall, doorContainer, message]);
     const darkness = this.scene.add.image(0, 0, DARKNESS_TEXTURE).setOrigin(0);
     const initialCover = this.scene.add.rectangle(0, 0, width, height, 0x030303, 1).setOrigin(0);
     const lighterContainer = this.createLighter().setAlpha(0);
@@ -43,6 +47,9 @@ export default class FirstRoomVisualFactory {
       roomContainer,
       wall,
       message,
+      doorContainer,
+      doorway,
+      doorPanel,
       darkness,
       initialCover,
       grain,
@@ -59,6 +66,9 @@ export default class FirstRoomVisualFactory {
   layout(visuals: FirstRoomVisuals, width: number, height: number): void {
     visuals.wall.setDisplaySize(width, height);
     visuals.message.setPosition(width * 0.405, height * 0.43);
+    visuals.doorContainer
+      .setPosition(width * 0.78, height * 0.49)
+      .setScale(Math.min(width / 1280, height / 720));
     visuals.darkness.setDisplaySize(width, height);
     visuals.initialCover.setSize(width, height);
     visuals.grain.setSize(width, height);
@@ -245,6 +255,36 @@ export default class FirstRoomVisualFactory {
       cursorX += character === ' ' ? 16 : 25 + (index % 2) * 2;
     }
     return container;
+  }
+
+  private createDoor(): {
+    container: Phaser.GameObjects.Container;
+    doorway: Phaser.GameObjects.Rectangle;
+    panel: Phaser.GameObjects.Container;
+  } {
+    const container = this.scene.add.container(0, 0).setAlpha(0.52);
+    const doorway = this.scene.add
+      .rectangle(0, 0, 190, 430, 0x010101, 1)
+      .setStrokeStyle(8, 0x100d0b, 0.9);
+    const panel = this.scene.add.container(-95, 0);
+    const slab = this.scene.add
+      .rectangle(0, 0, 190, 430, 0x17120f, 1)
+      .setOrigin(0, 0.5)
+      .setStrokeStyle(7, 0x0b0908, 1);
+    const upperInset = this.scene.add
+      .rectangle(18, -105, 154, 154, 0x1e1814, 1)
+      .setOrigin(0, 0.5)
+      .setStrokeStyle(3, 0x0e0b09, 0.9);
+    const lowerInset = this.scene.add
+      .rectangle(18, 107, 154, 214, 0x1c1612, 1)
+      .setOrigin(0, 0.5)
+      .setStrokeStyle(3, 0x0e0b09, 0.9);
+    const seam = this.scene.add.rectangle(2, 0, 4, 418, 0x33271f, 0.45).setOrigin(0, 0.5);
+    const handle = this.scene.add.circle(154, 8, 8, 0x4a4034, 1);
+    const handleShade = this.scene.add.circle(156, 10, 3, 0x17120f, 0.9);
+    panel.add([slab, upperInset, lowerInset, seam, handle, handleShade]);
+    container.add([doorway, panel]);
+    return { container, doorway, panel };
   }
 
   private createLighter(): Phaser.GameObjects.Container {
