@@ -1,5 +1,4 @@
 import BootScene from './scenes/BootScene';
-import FirstRoomScene from './scenes/FirstRoomScene';
 import Phaser from 'phaser';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -8,7 +7,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: 720,
   parent: 'game',
   backgroundColor: '#121212',
-  scene: [BootScene, FirstRoomScene],
+  scene: [BootScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
