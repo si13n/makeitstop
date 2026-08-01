@@ -6,13 +6,4 @@
 
 ![A small flame finds something on the wall.](docs/first-room.png)
 
-Nothing is broken. Keep moving.
-
-## If it followed you home
-
-```bash
-npm install
-npm run dev
-```
-
-TypeScript, Phaser, and a light that should probably go out.
+Nothing is broken. Keep moving. If it followed you home
