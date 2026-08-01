@@ -16,4 +16,3 @@ npm run dev
 ```
 
 TypeScript, Phaser, and a light that should probably go out.
-
